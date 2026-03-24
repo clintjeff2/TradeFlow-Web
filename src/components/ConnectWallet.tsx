@@ -13,9 +13,9 @@ export default function ConnectWallet() {
                   if (userInfo.publicKey) {
                         setPubKey(userInfo.publicKey);
                   }
-            } catch (e) {
-                  console.error("Freighter not found or access denied", e);
-                  alert("Please install Freighter Wallet to use TradeFlow!");
+            } catch (e: any) {
+                  console.error("Connection error:", e);
+                  alert(e.message || "Failed to connect to Freighter Wallet!");
             }
       };
 

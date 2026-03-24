@@ -1,16 +1,52 @@
-import { isAllowed, setAllowed, getUserInfo } from "@stellar/freighter-api";
+import { 
+  requestAccess, 
+  getPublicKey, 
+  isConnected,
+  getNetwork 
+} from "@stellar/freighter-api";
 import { Server } from "soroban-client";
 
 // Default to Testnet for development
 const RPC_URL = "https://soroban-testnet.stellar.org";
 const server = new Server(RPC_URL);
 
+/**
+ * Connects to the Freighter wallet extension.
+ * 1. Checks if Freighter is installed and connected.
+ * 2. Requests access to the user's account.
+ * 3. Retrieves the public key (Stellar address).
+ */
 export async function connectWallet() {
-  const allowed = await isAllowed();
-  if (!allowed) {
-    await setAllowed();
+  if (!await isConnected()) {
+    throw new Error("Freighter extension not found. Please install it to continue.");
   }
-  return await getUserInfo();
+
+  try {
+    // requestAccess() prompts the user to authorize the app
+    const accessResponse = await requestAccess();
+    
+    if (!accessResponse) {
+      throw new Error("Access denied by user.");
+    }
+
+    // After access is granted, we fetch the public key (Stellar address)
+    const publicKey = await getPublicKey();
+    
+    if (!publicKey) {
+      throw new Error("Unable to retrieve public key.");
+    }
+
+    // Verify correct network (Testnet)
+    const network = await getNetwork();
+    if (network !== "TESTNET") {
+      throw new Error(`Invalid network: ${network}. Please switch to TESTNET in Freighter settings.`);
+    }
+
+    return { publicKey };
+  } catch (error: any) {
+    console.error("Wallet connection error:", error);
+    throw error;
+  }
 }
 
 /**

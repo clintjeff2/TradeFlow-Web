@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { checkConnection, getPublicKey } from "@stellar/freighter-api";
+import { connectWallet } from "../lib/stellar";
 import { PlusCircle, ShieldCheck, Landmark } from "lucide-react";
 import LoanTable from "../components/LoanTable";
 import SkeletonRow from "../components/SkeletonRow";
@@ -21,12 +21,16 @@ export default function Page() {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   // 1. Connect Stellar Wallet (Freighter)
-  const connectWallet = async () => {
-    if (await checkConnection()) {
-      const publicKey = await getPublicKey();
-      setAddress(publicKey);
-    } else {
-      alert("Please install Freighter Wallet");
+  const handleConnectWallet = async () => {
+    try {
+      const userInfo = await connectWallet();
+      if (userInfo && userInfo.publicKey) {
+        setAddress(userInfo.publicKey);
+        console.log("Wallet connected:", userInfo.publicKey);
+      }
+    } catch (e: any) {
+      console.error("Connection failed:", e.message);
+      alert(e.message || "Failed to connect to Freighter wallet.");
     }
   };
 
@@ -158,7 +162,11 @@ export default function Page() {
         </div>
       </div>
 
-      <WalletModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
+      <WalletModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onConnect={handleConnectWallet}
+      />
 
       <button
         onClick={handleTestToast}

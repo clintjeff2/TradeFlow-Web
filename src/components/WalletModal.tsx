@@ -3,9 +3,10 @@ import React from "react";
 interface WalletModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onConnect?: () => void;
 }
 
-export default function WalletModal({ isOpen, onClose }: WalletModalProps) {
+export default function WalletModal({ isOpen, onClose, onConnect }: WalletModalProps) {
   if (!isOpen) return null;
 
   return (
@@ -37,7 +38,7 @@ export default function WalletModal({ isOpen, onClose }: WalletModalProps) {
           <button
             className="w-full bg-slate-700 hover:bg-slate-600 border border-slate-600 rounded-lg p-4 flex items-center gap-3 transition-colors"
             onClick={() => {
-              console.log("Freighter wallet selected");
+              if (onConnect) onConnect();
               onClose();
             }}
           >
