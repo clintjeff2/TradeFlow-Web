@@ -2,13 +2,22 @@ import {
   requestAccess, 
   getPublicKey, 
   isConnected,
-  getNetwork 
+  getNetwork,
+  signTransaction 
 } from "@stellar/freighter-api";
-import { Server } from "soroban-client";
+import { 
+  Server, 
+  TransactionBuilder, 
+  Asset, 
+  Operation, 
+  Networks 
+} from "soroban-client";
 
 // Default to Testnet for development
 const RPC_URL = "https://soroban-testnet.stellar.org";
 const server = new Server(RPC_URL);
+
+const NETWORK_PASSPHRASE = Networks.TESTNET;
 
 /**
  * Connects to the Freighter wallet extension.
@@ -92,4 +101,41 @@ export async function waitForTransaction(hash: string): Promise<string> {
   const errorMsg = `Transaction monitoring timed out after ${TIMEOUT_MS / 1000}s for hash: ${hash}`;
   console.error(`[waitForTransaction] ${errorMsg}`);
   throw new Error(errorMsg);
+}
+
+/**
+ * Adds a trustline for a Stellar asset (ChangeTrust operation).
+ * @param assetCode - Code of the asset (e.g., "USDC")
+ * @param assetIssuer - Issuer address of the asset
+ */
+export async function addTrustline(assetCode: string, assetIssuer: string) {
+  const { publicKey } = await connectWallet();
+  
+  // Fetch account details to get the current sequence number
+  const account = await server.getAccount(publicKey);
+  const asset = new Asset(assetCode, assetIssuer);
+  
+  // Construct the transaction
+  const transaction = new TransactionBuilder(account, {
+    fee: "1000", // Standard fee in stroops
+    networkPassphrase: NETWORK_PASSPHRASE,
+  })
+    .addOperation(Operation.changeTrust({ asset }))
+    .setTimeout(60)
+    .build();
+
+  // Request signature from Freighter
+  const xdr = transaction.toXDR();
+  const signedXdr = await signTransaction(xdr, {
+    network: "TESTNET",
+  });
+
+  // Submit to the network
+  const response = await server.sendTransaction(transaction);
+  
+  if (response.hash) {
+    return await waitForTransaction(response.hash);
+  }
+  
+  throw new Error("Transaction failed during submission.");
 }
