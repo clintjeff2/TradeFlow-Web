@@ -12,6 +12,7 @@ import InvoiceMintForm from "../components/InvoiceMintForm";
 import NewsBanner from "../components/NewsBanner";
 import useTransactionToast from "../lib/useTransactionToast";
 import AddTrustlineButton from "../components/AddTrustlineButton";
+import ProModeSection from "../components/ProModeSection";
 import { formatCurrency, formatDate } from "../lib/format";
 
 export default function Page() {
@@ -68,7 +69,7 @@ export default function Page() {
     <div className="min-h-screen bg-tradeflow-dark text-white font-sans flex flex-col">
       {/* News Banner */}
       <NewsBanner />
-      
+
       {/* Header */}
       <Navbar
         address={address}
@@ -109,16 +110,16 @@ export default function Page() {
           <div className="flex flex-wrap gap-4">
             <div className="flex items-center gap-3 bg-slate-900/50 p-3 rounded-xl border border-slate-700/50 min-w-[220px] justify-between">
               <span className="font-bold text-white">USDC</span>
-              <AddTrustlineButton 
-                assetCode="USDC" 
-                assetIssuer="GBBD67IF633ZHJ2CCYBT6RILOY7Y6S6M5SOW2S2ZQRAGI7XRYB2TOC6S" 
+              <AddTrustlineButton
+                assetCode="USDC"
+                assetIssuer="GBBD67IF633ZHJ2CCYBT6RILOY7Y6S6M5SOW2S2ZQRAGI7XRYB2TOC6S"
               />
             </div>
             <div className="flex items-center gap-3 bg-slate-900/50 p-3 rounded-xl border border-slate-700/50 min-w-[220px] justify-between">
               <span className="font-bold text-white">yXLM</span>
-              <AddTrustlineButton 
-                assetCode="yXLM" 
-                assetIssuer="GBDUE7TSYHCWW2NQCXHTS7F7W4R4SXY5NCCO4I734XOYLGGUKJALTCYI" 
+              <AddTrustlineButton
+                assetCode="yXLM"
+                assetIssuer="GBDUE7TSYHCWW2NQCXHTS7F7W4R4SXY5NCCO4I734XOYLGGUKJALTCYI"
               />
             </div>
           </div>
@@ -185,6 +186,9 @@ export default function Page() {
             <LoanTable />
           </div>
         </div>
+
+        {/* Pro Mode Charts (Lazy-loaded) */}
+        <ProModeSection />
       </div>
 
       <WalletModal
