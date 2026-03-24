@@ -7,6 +7,7 @@ import { NetworkCongestionProvider } from "../contexts/NetworkCongestionContext"
 import NetworkCongestionBanner from "../components/NetworkCongestionBanner";
 import NetworkCongestionDetector from "../components/NetworkCongestionDetector";
 import Footer from "../components/layout/Footer";
+import NetworkCongestionBanner from "../components/NetworkCongestionBanner";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -34,6 +35,10 @@ export default function RootLayout({
               {children}
             </div>
           </NetworkCongestionProvider>
+          <NetworkCongestionBanner />
+          <div className="flex-1">
+            {children}
+          </div>
         </SlippageProvider>
         <Footer />
         <ToasterProvider />
