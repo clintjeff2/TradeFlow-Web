@@ -20,6 +20,7 @@ export default function SwapInterface() {
   const [toAmount, setToAmount] = useState("");
   const [priceImpact, setPriceImpact] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isTradeReviewOpen, setIsTradeReviewOpen] = useState(false);
   const { slippageTolerance } = useSlippage();
 
   // Load saved token selections on mount
@@ -89,6 +90,7 @@ export default function SwapInterface() {
         await new Promise(resolve => setTimeout(resolve, 2000));
       } finally {
         setIsSubmitting(false);
+        setIsTradeReviewOpen(true);
       }
     }
   };
@@ -100,8 +102,52 @@ export default function SwapInterface() {
       await new Promise(resolve => setTimeout(resolve, 2000));
     } finally {
       setIsSubmitting(false);
+      setIsTradeReviewOpen(true);
     }
   };
+
+  const handleTradeConfirm = async () => {
+    console.log("Trade confirmed");
+    setIsSubmitting(true);
+    try {
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      setIsTradeReviewOpen(false);
+      setFromAmount("");
+      setToAmount("");
+      setPriceImpact(0);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Check if any modal is open
+  const isAnyModalOpen = isSettingsOpen || isHighSlippageWarningOpen || isTradeReviewOpen;
+
+  // Check if swap is valid
+  const isSwapValid = fromAmount && parseFloat(fromAmount) > 0 && !isSubmitting;
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      // Don't trigger shortcuts if any modal is open
+      if (isAnyModalOpen) return;
+
+      // Enter key - trigger swap if valid
+      if (event.key === 'Enter' && isSwapValid) {
+        event.preventDefault();
+        handleSwapClick();
+      }
+
+      // ArrowUp/ArrowDown - flip tokens
+      if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
+        event.preventDefault();
+        handleSwap();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isAnyModalOpen, isSwapValid, fromAmount, isSubmitting]);
 
   return (
     <>
