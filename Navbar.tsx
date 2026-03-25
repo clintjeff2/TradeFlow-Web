@@ -3,8 +3,9 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Wallet, Copy, Check } from "lucide-react";
+import { Wallet, Copy, Check, CreditCard } from "lucide-react";
 import NetworkSelector, { Network } from "./src/components/NetworkSelector";
+import FiatOnRampModal from "./src/components/FiatOnRampModal";
 
 interface NavbarProps {
   address?: string;
@@ -14,6 +15,7 @@ interface NavbarProps {
 export default function Navbar({ address, onConnect }: NavbarProps) {
   const pathname = usePathname();
   const [copied, setCopied] = useState(false);
+  const [isFiatModalOpen, setIsFiatModalOpen] = useState(false);
 
   const copyToClipboard = async () => {
     if (address) {
@@ -63,6 +65,16 @@ export default function Navbar({ address, onConnect }: NavbarProps) {
 
       <div className="flex items-center gap-4">
         <NetworkSelector />
+        
+        {/* Buy Crypto Button */}
+        <button
+          onClick={() => setIsFiatModalOpen(true)}
+          className="flex items-center gap-2 bg-green-600 hover:bg-green-700 px-6 py-2 rounded-full transition"
+        >
+          <CreditCard size={18} />
+          Buy Crypto
+        </button>
+        
         {address ? (
           <div className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 px-6 py-2 rounded-full transition">
             <Wallet size={18} />
@@ -91,6 +103,12 @@ export default function Navbar({ address, onConnect }: NavbarProps) {
           </button>
         )}
       </div>
+      
+      {/* Fiat On-Ramp Modal */}
+      <FiatOnRampModal
+        isOpen={isFiatModalOpen}
+        onClose={() => setIsFiatModalOpen(false)}
+      />
     </div>
   );
 }
