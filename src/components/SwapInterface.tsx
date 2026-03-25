@@ -5,6 +5,7 @@ import { ArrowUpDown, Settings } from "lucide-react";
 import TokenDropdown from "./TokenDropdown";
 import SettingsModal from "./SettingsModal";
 import HighSlippageWarning from "./HighSlippageWarning";
+import TransactionSignatureModal from "./TransactionSignatureModal";
 import { useSlippage } from "../contexts/SlippageContext";
 import Card from "./Card";
 import Button from "./ui/Button";
@@ -20,6 +21,7 @@ export default function SwapInterface() {
   const [toAmount, setToAmount] = useState("");
   const [priceImpact, setPriceImpact] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isTransactionSignatureOpen, setIsTransactionSignatureOpen] = useState(false);
   const [isTradeReviewOpen, setIsTradeReviewOpen] = useState(false);
   const { slippageTolerance } = useSlippage();
 
@@ -83,6 +85,12 @@ export default function SwapInterface() {
     if (priceImpact > 5) {
       setIsHighSlippageWarningOpen(true);
     } else {
+      // Generate mock transaction XDR
+      const mockTransactionXDR = "AAAAAK/eFzA7Jf5Xf3Xf3Xf3Xf3Xf3Xf3Xf3Xf3Xf3Xf3Xf3Xf3Xf3Xf3Xf3Xf3XAAAABQAAAAAAAAAAA==";
+      const mockNetworkFee = "0.00001";
+      const mockContractAddress = "CC7H5QY7F3JQZJQZJQZJQZJQZJQZJQZJQZJQZJQZJQZJQZJQZJQZJQ";
+      
+      setIsTransactionSignatureOpen(true);
       setIsSubmitting(true);
       // Proceed with normal swap
       console.log("Proceeding with normal swap");
@@ -97,6 +105,20 @@ export default function SwapInterface() {
 
   const handleHighSlippageConfirm = async () => {
     console.log("Proceeding with high slippage swap");
+    // Generate mock transaction XDR
+    const mockTransactionXDR = "AAAAAK/eFzA7Jf5Xf3Xf3Xf3Xf3Xf3Xf3Xf3Xf3Xf3Xf3Xf3Xf3Xf3Xf3Xf3Xf3XAAAABQAAAAAAAAAAA==";
+    const mockNetworkFee = "0.00001";
+    const mockContractAddress = "CC7H5QY7F3JQZJQZJQZJQZJQZJQZJQZJQZJQZJQZJQZJQZJQZJQZJQ";
+    
+    setIsTransactionSignatureOpen(true);
+  };
+
+  const handleTransactionSuccess = (signedXDR: string) => {
+    console.log("Transaction signed successfully:", signedXDR);
+    // Reset form after successful transaction
+    setFromAmount("");
+    setToAmount("");
+    setPriceImpact(0);
     setIsSubmitting(true);
     try {
       await new Promise(resolve => setTimeout(resolve, 2000));
@@ -297,11 +319,21 @@ export default function SwapInterface() {
         priceImpact={priceImpact}
       />
 
+      {/* Transaction Signature Modal */}
+      <TransactionSignatureModal
+        isOpen={isTransactionSignatureOpen}
+        onClose={() => setIsTransactionSignatureOpen(false)}
+        onSuccess={handleTransactionSuccess}
+        transactionXDR="AAAAAK/eFzA7Jf5Xf3Xf3Xf3Xf3Xf3Xf3Xf3Xf3Xf3Xf3Xf3Xf3Xf3Xf3Xf3Xf3XAAAABQAAAAAAAAAAA=="
+        networkFee="0.00001"
+        contractAddress="CC7H5QY7F3JQZJQZJQZJQZJQZJQZJQZJQZJQZJQZJQZJQZJQZJQZJQ"
+      />
+
       {/* Trade Review Modal */}
       <TradeReviewModal
-        isOpen={isTradeReviewOpen}
-        onClose={() => setIsTradeReviewOpen(false)}
-        onConfirm={handleTradeConfirm}
+        isOpen={false}
+        onClose={() => {}}
+        onConfirm={() => {}}
         fromAmount={fromAmount}
         fromToken={fromToken}
         toAmount={toAmount}
