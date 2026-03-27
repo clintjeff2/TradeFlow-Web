@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { ArrowUpDown, Settings } from "lucide-react";
+import toast from "react-hot-toast";                    // ← Toast import
 import TokenDropdown from "./TokenDropdown";
 import SettingsModal from "./SettingsModal";
 import HighSlippageWarning from "./HighSlippageWarning";
@@ -32,15 +33,11 @@ export default function SwapInterface() {
     const savedFromToken = localStorage.getItem('tradeflow-fromToken');
     const savedToToken = localStorage.getItem('tradeflow-toToken');
 
-    if (savedFromToken) {
-      setFromToken(savedFromToken);
-    }
-    if (savedToToken) {
-      setToToken(savedToToken);
-    }
+    if (savedFromToken) setFromToken(savedFromToken);
+    if (savedToToken) setToToken(savedToToken);
   }, []);
 
-  // Save token selections to localStorage when they change
+  // Save token selections to localStorage
   useEffect(() => {
     localStorage.setItem('tradeflow-fromToken', fromToken);
   }, [fromToken]);
@@ -49,11 +46,9 @@ export default function SwapInterface() {
     localStorage.setItem('tradeflow-toToken', toToken);
   }, [toToken]);
 
-  // Calculate price impact (mock calculation for demo)
+  // Calculate price impact
   const calculatePriceImpact = (amount: string) => {
     if (!amount || parseFloat(amount) <= 0) return 0;
-
-    // Mock calculation: larger amounts have higher price impact
     const baseImpact = Math.min(parseFloat(amount) * 0.01, 15);
     const tokenMultiplier = fromToken === "XLM" ? 1.2 : 1.0;
     return baseImpact * tokenMultiplier;
@@ -72,7 +67,6 @@ export default function SwapInterface() {
     const impact = calculatePriceImpact(value);
     setPriceImpact(impact);
 
-    // Calculate mock to amount
     if (value && parseFloat(value) > 0) {
       const mockRate = fromToken === "XLM" ? 0.15 : 6.67;
       setToAmount((parseFloat(value) * mockRate * (1 - impact / 100)).toFixed(6));
@@ -81,8 +75,28 @@ export default function SwapInterface() {
     }
   };
 
-  const handleSwapClick = async () => {
-    if (!fromAmount || parseFloat(fromAmount) <= 0) return;
+  // Main Swap Handler with Toast
+    const handleSwapClick = async () => {
+    if (!fromAmount || parseFloat(fromAmount) <= 0) {
+      toast.error("Please enter an amount to swap");
+      return;
+    }
+
+    const loadingToast = toast.loading("Processing swap...");
+
+    try {
+      if (priceImpact > 5) {
+        setIsHighSlippageWarningOpen(true);
+        toast.dismiss(loadingToast);
+        return;
+      }
+
+      // Simulate swap processing
+      await new Promise((resolve) => setTimeout(resolve, 1800));
+
+      toast.success(`Swapped ${fromAmount} ${fromToken} → ${toAmount} ${toToken}`, {
+        id: loadingToast,
+      });
 
     if (priceImpact > 5) {
       setIsHighSlippageWarningOpen(true);
@@ -105,53 +119,66 @@ export default function SwapInterface() {
       
       setIsTransactionSignatureOpen(true);
       setIsSubmitting(true);
-      // Proceed with normal swap
-      console.log("Proceeding with normal swap");
-      try {
-        await new Promise(resolve => setTimeout(resolve, 2000));
-      } finally {
-        setIsSubmitting(false);
-        setIsTradeReviewOpen(true);
-      }
+
+    } catch (error) {
+      toast.error("Failed to process swap", {
+        id: loadingToast,
+      });
     }
   };
-
+  
   const handleHighSlippageConfirm = async () => {
-    console.log("Proceeding with high slippage swap");
-    // Generate mock transaction XDR
-    const mockTransactionXDR = "AAAAAK/eFzA7Jf5Xf3Xf3Xf3Xf3Xf3Xf3Xf3Xf3Xf3Xf3Xf3Xf3Xf3Xf3Xf3Xf3XAAAABQAAAAAAAAAAA==";
-    const mockNetworkFee = "0.00001";
-    const mockContractAddress = "CC7H5QY7F3JQZJQZJQZJQZJQZJQZJQZJQZJQZJQZJQZJQZJQZJQZJQ";
-    
-    setIsTransactionSignatureOpen(true);
+    const loadingToast = toast.loading("Processing high slippage swap...");
+
+    try {
+      await new Promise((resolve) => setTimeout(resolve, 1800));
+
+      toast.success("High slippage swap initiated successfully", {
+        id: loadingToast,
+      });
+
+      setIsTransactionSignatureOpen(true);
+    } catch (error) {
+      toast.error("Swap failed", { id: loadingToast });
+    } finally {
+      setIsHighSlippageWarningOpen(false);
+    }
   };
 
   const handleTransactionSuccess = (signedXDR: string) => {
-    console.log("Transaction signed successfully:", signedXDR);
-    // Reset form after successful transaction
-    setFromAmount("");
-    setToAmount("");
-    setPriceImpact(0);
-    setIsSubmitting(true);
-    try {
-      await new Promise(resolve => setTimeout(resolve, 2000));
-    } finally {
-      setIsSubmitting(false);
-      setIsTradeReviewOpen(true);
-    }
+    console.log("Transaction signed:", signedXDR);
+
+    toast.success("Transaction signed successfully!", {
+      icon: "✅",
+    });
+
+    setIsTransactionSignatureOpen(false);
+    setIsTradeReviewOpen(true);
+    setIsSubmitting(false);
+
+    setTimeout(() => {
+      setFromAmount("");
+      setToAmount("");
+      setPriceImpact(0);
+    }, 1500);
   };
 
   const handleTradeConfirm = async () => {
-    console.log("Trade confirmed");
-    setIsSubmitting(true);
+    const loadingToast = toast.loading("Finalizing trade...");
+
     try {
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+
+      toast.success("Trade completed successfully!", {
+        id: loadingToast,
+      });
+
       setIsTradeReviewOpen(false);
       setFromAmount("");
       setToAmount("");
       setPriceImpact(0);
-    } finally {
-      setIsSubmitting(false);
+    } catch (err) {
+      toast.error("Failed to finalize trade", { id: loadingToast });
     }
   };
 
@@ -164,16 +191,13 @@ export default function SwapInterface() {
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      // Don't trigger shortcuts if any modal is open
       if (isAnyModalOpen) return;
 
-      // Enter key - trigger swap if valid
       if (event.key === 'Enter' && isSwapValid) {
         event.preventDefault();
         handleSwapClick();
       }
 
-      // ArrowUp/ArrowDown - flip tokens
       if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
         event.preventDefault();
         handleSwap();
@@ -182,7 +206,7 @@ export default function SwapInterface() {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isAnyModalOpen, isSwapValid, fromAmount, isSubmitting]);
+  }, [isAnyModalOpen, isSwapValid]);
 
   return (
     <>
@@ -192,7 +216,7 @@ export default function SwapInterface() {
       </div>
 
       <Card className="max-w-md mx-auto">
-        {/* Header with settings */}
+        {/* Header */}
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-xl font-semibold text-white">Swap Tokens</h2>
           <button
@@ -217,7 +241,7 @@ export default function SwapInterface() {
           </div>
         </div>
 
-        {/* Swap Button */}
+        {/* Swap Icon */}
         <div className="flex justify-center my-4">
           <button
             onClick={handleSwap}
@@ -245,7 +269,7 @@ export default function SwapInterface() {
           </div>
         </div>
 
-        {/* Swap CTA */}
+        {/* Swap Button */}
         <button
           onClick={handleSwapClick}
           disabled={isSubmitting}
@@ -259,21 +283,10 @@ export default function SwapInterface() {
                 fill="none"
                 viewBox="0 0 24 24"
               >
-                <circle
-                  className="opacity-25"
-                  cx="12"
-                  cy="12"
-                  r="10"
-                  stroke="currentColor"
-                  strokeWidth="4"
-                />
-                <path
-                  className="opacity-75"
-                  fill="currentColor"
-                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                />
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
               </svg>
-              <span>Confirming...</span>
+              <span>Processing...</span>
             </>
           ) : (
             "Swap Tokens"
@@ -322,13 +335,12 @@ export default function SwapInterface() {
         </div>
       </Card>
 
-      {/* Settings Modal */}
+      {/* Modals */}
       <SettingsModal
         isOpen={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}
       />
 
-      {/* High Slippage Warning Modal */}
       <HighSlippageWarning
         isOpen={isHighSlippageWarningOpen}
         onClose={() => setIsHighSlippageWarningOpen(false)}
@@ -336,7 +348,6 @@ export default function SwapInterface() {
         priceImpact={priceImpact}
       />
 
-      {/* Transaction Signature Modal */}
       <TransactionSignatureModal
         isOpen={isTransactionSignatureOpen}
         onClose={() => setIsTransactionSignatureOpen(false)}
@@ -346,11 +357,10 @@ export default function SwapInterface() {
         contractAddress="CC7H5QY7F3JQZJQZJQZJQZJQZJQZJQZJQZJQZJQZJQZJQZJQZJQZJQ"
       />
 
-      {/* Trade Review Modal */}
       <TradeReviewModal
-        isOpen={false}
-        onClose={() => {}}
-        onConfirm={() => {}}
+        isOpen={isTradeReviewOpen}
+        onClose={() => setIsTradeReviewOpen(false)}
+        onConfirm={handleTradeConfirm}
         fromAmount={fromAmount}
         fromToken={fromToken}
         toAmount={toAmount}
