@@ -144,15 +144,15 @@ export default function SwapInterface() {
     setIsTradeReviewOpen(false);
     setIsSubmitting(true);
     setSubmissionStartTime(Date.now());
-    
+
     try {
       // Simulate transaction submission
       await new Promise(resolve => setTimeout(resolve, 2000));
-      
+
       // Generate mock transaction XDR
       const mockTransactionXDR = "AAAAAK/eFzA7Jf5Xf3Xf3Xf3Xf3Xf3Xf3Xf3Xf3Xf3Xf3Xf3Xf3Xf3Xf3Xf3Xf3XAAAABQAAAAAAAAAAA==";
       console.log("Mock XDR generated:", mockTransactionXDR);
-      
+
       setIsTransactionSignatureOpen(true);
     } catch (error) {
       toast.error("Failed to submit trade");
@@ -204,6 +204,17 @@ export default function SwapInterface() {
 
   // Check if swap is valid
   const isSwapValid = fromAmount && parseFloat(fromAmount) > 0 && !isSubmitting;
+
+  // Dynamic Price Impact color logic
+  const getPriceImpactColor = () => {
+    if (priceImpact < 1) {
+      return "text-emerald-400"; // Green for low impact (< 1%)
+    } else if (priceImpact >= 1 && priceImpact < 3) {
+      return "text-yellow-400"; // Yellow for medium impact (1% - 3%)
+    } else {
+      return "text-red-500 font-bold"; // Red for high impact (>= 3%)
+    }
+  };
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -318,7 +329,7 @@ export default function SwapInterface() {
                 Price Impact
               </span>
             </Tooltip>
-            <span className={`${priceImpact > 5 ? "text-red-500 font-bold" : "text-slate-200"}`}>
+            <span className={getPriceImpactColor()}>
               {priceImpact.toFixed(2)}%
             </span>
           </div>
