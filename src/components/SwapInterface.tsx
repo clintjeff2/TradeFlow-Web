@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { ArrowUpDown, Settings } from "lucide-react";
-import toast from "react-hot-toast";                    // ← Toast import
+import toast from "react-hot-toast";
 import TokenDropdown from "./TokenDropdown";
 import SettingsModal from "./SettingsModal";
 import HighSlippageWarning from "./HighSlippageWarning";
@@ -14,6 +14,8 @@ import Button from "./ui/Button";
 import Tooltip from "./ui/Tooltip";
 import TradeReviewModal from "./TradeReviewModal";
 import LivePriceChart from "./LivePriceChart";
+/* ISSUE #87: Import the new Success/Share modal */
+import TradeSuccessModal from "./TradeSuccessModal";
 
 export default function SwapInterface() {
   const [fromToken, setFromToken] = useState("XLM");
@@ -26,9 +28,13 @@ export default function SwapInterface() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isTradeReviewOpen, setIsTradeReviewOpen] = useState(false);
   const [isTransactionSignatureOpen, setIsTransactionSignatureOpen] = useState(false);
+
+  /* ISSUE #87: State to manage the visibility of the growth/share modal */
+  const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
+
   const [submissionStartTime, setSubmissionStartTime] = useState<number | null>(null);
   const [timeLeft, setTimeLeft] = useState<string>("");
-  const [fromBalance] = useState("1240.50"); // Mock balance for Requirement #69
+  const [fromBalance] = useState("1240.50");
   const { slippageTolerance, transactionDeadline } = useSlippage();
 
   // Countdown timer effect
@@ -105,7 +111,6 @@ export default function SwapInterface() {
     }
   };
 
-  // Main Swap Handler with Toast
   const handleSwapClick = async () => {
     if (!fromAmount || parseFloat(fromAmount) <= 0) {
       toast.error("Please enter an amount to swap");
@@ -121,7 +126,6 @@ export default function SwapInterface() {
         return;
       }
 
-      // Simulate swap processing
       await new Promise((resolve) => setTimeout(resolve, 1800));
 
       toast.success(`Swapped ${fromAmount} ${fromToken} → ${toAmount} ${toToken}`, {
@@ -144,15 +148,9 @@ export default function SwapInterface() {
     setIsTradeReviewOpen(false);
     setIsSubmitting(true);
     setSubmissionStartTime(Date.now());
-    
+
     try {
-      // Simulate transaction submission
       await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // Generate mock transaction XDR
-      const mockTransactionXDR = "AAAAAK/eFzA7Jf5Xf3Xf3Xf3Xf3Xf3Xf3Xf3Xf3Xf3Xf3Xf3Xf3Xf3Xf3Xf3Xf3XAAAABQAAAAAAAAAAA==";
-      console.log("Mock XDR generated:", mockTransactionXDR);
-      
       setIsTransactionSignatureOpen(true);
     } catch (error) {
       toast.error("Failed to submit trade");
@@ -166,11 +164,7 @@ export default function SwapInterface() {
 
     try {
       await new Promise((resolve) => setTimeout(resolve, 1800));
-
-      toast.success("High slippage swap initiated successfully", {
-        id: loadingToast,
-      });
-
+      toast.success("High slippage swap initiated successfully", { id: loadingToast });
       setIsTransactionSignatureOpen(true);
       setIsSubmitting(true);
       setSubmissionStartTime(Date.now());
@@ -181,6 +175,7 @@ export default function SwapInterface() {
     }
   };
 
+  /* ISSUE #87: Trigger the success modal when the transaction is signed */
   const handleTransactionSuccess = (signedXDR: string) => {
     console.log("Transaction signed:", signedXDR);
 
@@ -192,6 +187,9 @@ export default function SwapInterface() {
     setIsSubmitting(false);
     setSubmissionStartTime(null);
 
+    // Show the Growth/Share modal
+    setIsSuccessModalOpen(true);
+
     setTimeout(() => {
       setFromAmount("");
       setToAmount("");
@@ -199,22 +197,16 @@ export default function SwapInterface() {
     }, 1500);
   };
 
-  // Check if any modal is open
-  const isAnyModalOpen = isSettingsOpen || isHighSlippageWarningOpen || isTradeReviewOpen;
-
-  // Check if swap is valid
+  const isAnyModalOpen = isSettingsOpen || isHighSlippageWarningOpen || isTradeReviewOpen || isSuccessModalOpen;
   const isSwapValid = fromAmount && parseFloat(fromAmount) > 0 && !isSubmitting;
 
-  // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (isAnyModalOpen) return;
-
       if (event.key === 'Enter' && isSwapValid) {
         event.preventDefault();
         handleSwapClick();
       }
-
       if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
         event.preventDefault();
         handleSwap();
@@ -227,13 +219,11 @@ export default function SwapInterface() {
 
   return (
     <>
-      {/* Live Price Chart */}
       <div className="max-w-md mx-auto mb-6">
         <LivePriceChart symbol={`${fromToken}/${toToken}`} height={300} />
       </div>
 
       <Card className="max-w-md mx-auto">
-        {/* Header */}
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-xl font-semibold text-white">Swap Tokens</h2>
           <button
@@ -244,7 +234,6 @@ export default function SwapInterface() {
           </button>
         </div>
 
-        {/* From Token */}
         <div className="mb-4">
           <label className="block text-sm text-slate-400 mb-2">From</label>
           <div className="flex gap-3">
@@ -258,7 +247,6 @@ export default function SwapInterface() {
           </div>
         </div>
 
-        {/* Swap Icon */}
         <div className="flex justify-center my-4">
           <button
             onClick={handleSwap}
@@ -271,7 +259,6 @@ export default function SwapInterface() {
           </button>
         </div>
 
-        {/* To Token */}
         <div className="mb-6">
           <label className="block text-sm text-slate-400 mb-2">To</label>
           <div className="flex gap-3">
@@ -286,7 +273,6 @@ export default function SwapInterface() {
           </div>
         </div>
 
-        {/* Swap Button */}
         <button
           onClick={handleSwapClick}
           disabled={isSubmitting}
@@ -294,13 +280,8 @@ export default function SwapInterface() {
         >
           {isSubmitting ? (
             <>
-              <svg
-                className="animate-spin h-5 w-5 text-white"
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-              >
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+              <svg className="animate-spin h-5 w-5 text-white" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
               </svg>
               <span>Confirming ({timeLeft})</span>
@@ -310,53 +291,24 @@ export default function SwapInterface() {
           )}
         </button>
 
-        {/* Transaction Details */}
         <div className="space-y-3 pt-4 border-t border-slate-700/50">
           <div className="flex justify-between text-sm">
             <Tooltip content="The estimated change in price due to the size of your trade.">
-              <span className="text-slate-400 underline decoration-dotted decoration-slate-600 cursor-help">
-                Price Impact
-              </span>
+              <span className="text-slate-400 underline decoration-dotted decoration-slate-600 cursor-help">Price Impact</span>
             </Tooltip>
-            <span className={`${priceImpact > 5 ? "text-red-500 font-bold" : "text-slate-200"}`}>
-              {priceImpact.toFixed(2)}%
-            </span>
+            <span className={`${priceImpact > 5 ? "text-red-500 font-bold" : "text-slate-200"}`}>{priceImpact.toFixed(2)}%</span>
           </div>
-
           <div className="flex justify-between text-sm">
-            <Tooltip content="The difference between the expected price of a trade and the executed price.">
-              <span className="text-slate-400 underline decoration-dotted decoration-slate-600 cursor-help">
-                Slippage Tolerance
-              </span>
+            <Tooltip content="Slippage tolerance.">
+              <span className="text-slate-400 underline decoration-dotted decoration-slate-600 cursor-help">Slippage Tolerance</span>
             </Tooltip>
             <span className="text-slate-200">{slippageTolerance}%</span>
-          </div>
-
-          <div className="flex justify-between text-sm">
-            <Tooltip content="A fee paid to liquidity providers who facilitate this trade.">
-              <span className="text-slate-400 underline decoration-dotted decoration-slate-600 cursor-help">
-                Liquidity Provider Fee
-              </span>
-            </Tooltip>
-            <span className="text-slate-200">0.3%</span>
-          </div>
-
-          <div className="flex justify-between text-sm">
-            <Tooltip content="The most efficient path through multiple liquidity pools to execute your trade.">
-              <span className="text-slate-400 underline decoration-dotted decoration-slate-600 cursor-help">
-                Route
-              </span>
-            </Tooltip>
-            <span className="text-slate-200">{fromToken} → {toToken}</span>
           </div>
         </div>
       </Card>
 
       {/* Modals */}
-      <SettingsModal
-        isOpen={isSettingsOpen}
-        onClose={() => setIsSettingsOpen(false)}
-      />
+      <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
 
       <HighSlippageWarning
         isOpen={isHighSlippageWarningOpen}
@@ -386,6 +338,12 @@ export default function SwapInterface() {
         slippageTolerance={slippageTolerance}
         fee="0.3%"
         route={`${fromToken} → ${toToken}`}
+      />
+
+      {/* ISSUE #87: Success modal with 'Share on X' button */}
+      <TradeSuccessModal
+        isOpen={isSuccessModalOpen}
+        onClose={() => setIsSuccessModalOpen(false)}
       />
     </>
   );
