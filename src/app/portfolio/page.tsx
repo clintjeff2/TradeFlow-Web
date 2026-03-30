@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { connectWallet, WalletType } from "../../lib/stellar";
-import Navbar from "../../../Navbar";
+import Navbar from "../../components/Navbar";
 import WalletModal from "../../components/WalletModal";
 import PortfolioChart from "../../components/PortfolioChart";
 
